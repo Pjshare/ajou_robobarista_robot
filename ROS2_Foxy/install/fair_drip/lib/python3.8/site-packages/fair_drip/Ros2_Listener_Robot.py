@@ -1,5 +1,6 @@
 "#-*- coding: UTF-8 -*-"
-
+import sys
+sys.path.append('~/ros_ws/src/Ajou_Drip_Project-main/ROS2_Foxy')
 import asyncio
 import websockets # type: ignore
 import json
@@ -32,7 +33,7 @@ EP=[0.000, 0.000, 0.000, 0.000]
 DP=[1.000, 1.000, 1.000, 1.000, 1.000, 1.000]
 EP2=[0.000,0.000,0.000,0.000]
 
-TOTAL_STEP = 31
+TOTAL_STEP = 13
 
 class Listener(Node):
     def __init__(self):
@@ -48,7 +49,7 @@ class Listener(Node):
 
         self.lock = asyncio.Lock()  
         
-        self.websocket_uri = "ws://localhost:9090"
+        self.websocket_uri = "ws://192.168.58.8:9090"
         try:
             self.loop = asyncio.get_event_loop()
         except RuntimeError:  
@@ -63,24 +64,23 @@ class Listener(Node):
     
     async def listener_callback(self, msg):
         async with self.lock:  
-
             data = msg['data'].strip()
             data = data.replace("'", '"')
             data = json.loads(data)
-
+            print(type(data))
             sub_msg1 = data.get('conn')
             sub_msg2 = data.get('pos')
 
-            msg_Coffee = data.get('coffee')
-            msg_Type = data.get('dripType')
-            msg_Temp = data.get('waterTemp')
-            msg_WTotal = data.get('waterTotal')
-            msg_WM = data.get('waterMethod')
-            msg_TM = data.get('timeMethod')
+            msg_Coffee = data['recipe'].get('coffee')
+            msg_Type = data['recipe'].get('drip_type')
+            msg_Temp = data['recipe'].get('water_temp')
+            msg_WTotal = data['recipe'].get('water_total')
+            msg_WM = data['recipe'].get('water_method')
+            msg_TM = data['recipe'].get('time_method')
+
             recipe_w = msg_WM.split(', ') if msg_WM else []
             recipe_t = msg_TM.split(', ') if msg_TM else []
             self.get_logger().info(f"Received raw data: {data}")
-
             if None in [msg_Coffee]: 
                 
                 if sub_msg1:
@@ -88,7 +88,8 @@ class Listener(Node):
                 elif sub_msg2:
                     await self.drip_clearing(sub_msg2)
             else:
-                await rc.SetSpeed(40)
+                print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                await rc.SetSpeed(10)
                 await rc.set_home()
                 await self.recipe_dripper(msg_Coffee, msg_Type, msg_Temp, msg_WTotal, msg_WM, len(recipe_w), msg_TM, len(recipe_t))
             
@@ -1004,7 +1005,7 @@ class Listener(Node):
         await rc.set_home()
 
 async def listen(listener_node):
-    uri = "ws://localhost:9090"
+    uri = "ws://192.168.58.8:9090"
     async with websockets.connect(uri) as websocket:
         subscribe_msg = {
             "op": "subscribe",
@@ -1016,6 +1017,7 @@ async def listen(listener_node):
         while True:
             message = await websocket.recv()
             data = json.loads(message)
+            print(data)
             if 'msg' in data:
                 await listener_node.listener_callback(data['msg'])
             

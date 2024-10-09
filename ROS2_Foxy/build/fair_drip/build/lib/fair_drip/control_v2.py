@@ -5,8 +5,8 @@ import time
 
 import asyncio
 
-import fair_drip.conf_file as cf
-import fair_drip.frrpc as frrpc
+import conf_file as cf
+import frrpc as frrpc
 ## Robot info
 ROBOT_IP = "192.168.58.2" 
 robot = frrpc.RPC(ROBOT_IP)
@@ -88,14 +88,14 @@ async def kettle_pick():
     await PTP(cf.new_pick_fullwater_kettle["J91"], 100, -1)
     await PTP(cf.new_pick_fullwater_kettle["J92"], 100, -1)
     await PTP(cf.new_pick_fullwater_kettle["J93"], 100, -1)
-    await PTP(cf.new_pick_fullwater_kettle["J94"], 70, -1)
-    await PTP(cf.new_pick_fullwater_kettle["J95"], 50, -1)
+    await PTP(cf.new_pick_fullwater_kettle["J94"], 50, -1)
+    await PTP(cf.new_pick_fullwater_kettle["J95"], 30, -1)
     await PTP(cf.new_pick_fullwater_kettle["J96"], 30, -1)
     await PTP(cf.new_pick_fullwater_kettle["J97"], 30, -1)
-    await movegripper(1, 18, 50, 50, 10000, 0)
+    await movegripper(1, 22, 50, 50, 10000, 0)
     await PTP(cf.new_pick_fullwater_kettle["J98"], 30, -1)
-    await PTP(cf.new_pick_fullwater_kettle["J99"], 70, -1)
-    await PTP(cf.new_pick_fullwater_kettle["J100"], 100, -1)
+    await PTP(cf.new_pick_fullwater_kettle["J99"], 30, -1)
+    await PTP(cf.new_pick_fullwater_kettle["J100"], 30, -1)
 
 async def kettle_back():
     await PTP(cf.new_pick_fullwater_kettle["J100"], 100, -1)
@@ -119,22 +119,17 @@ async def pouring_water():
     await PTP(cf.pouring_water["J1"], 10,-1)
 
 async def beancup_pick():
-    await movegripper(1, 80, 50, 50, 10000, 0)
-    
-    await PTP(cf.pick_bean_cup['J1'],100, -1)
-    await PTP(cf.pick_bean_cup['J2'],70, -1)
+    await movegripper(1, 100, 50, 50, 10000, 0)
+    await PTP(cf.pick_bean_cup['J1'],30, -1) 
+    await PTP(cf.pick_bean_cup['J2'],30, -1)
+    await movegripper(1, 18, 50, 50, 10000, 0)
     await PTP(cf.pick_bean_cup['J3'],30, -1)
-    await movegripper(1, 15, 50, 50, 10000, 0)
-    await PTP(cf.pick_bean_cup['J4'],30, -1)
-    await PTP(cf.pick_bean_cup['J5'],100, -1)
 
 async def beancup_back():
-    await PTP(cf.pick_bean_cup['J1'],100, -1)
-    await PTP(cf.pick_bean_cup['J4'],70, -1)
     await PTP(cf.pick_bean_cup['J3'],30, -1)
-    await movegripper(1, 80, 50, 50, 10000, 0)
     await PTP(cf.pick_bean_cup['J2'],30, -1)
-    await PTP(cf.pick_bean_cup['J1'],100, -1)
+    await movegripper(1, 100, 50, 50, 10000, 0)
+    await PTP(cf.pick_bean_cup['J3'],30, -1)
 
 async def beancup_grinding_bean_in():
     await PTP(cf.grinding_coffee_bean['J1'],100, -1)
@@ -142,12 +137,10 @@ async def beancup_grinding_bean_in():
 async def beancup_grinding_bean_out():
     await PTP(cf.grinding_coffee_bean['J2'],100, -1)
 
-async def beancup_dropbean_ready():
+async def beancup_dropbean_ready():#수정
     await PTP(cf.moving_coffee_bean['J1'], 100, -1)
-    await PTP(cf.moving_coffee_bean['J2'], 100, -1)
-    await PTP(cf.moving_coffee_bean['J3'], 100, -1)
 
-async def beancup_dropbean_1():
+async def beancup_dropbean_1(): #dripper1 수정
     await PTP(cf.set_coffee_bean_dripper1['J1'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper1['J2'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper1['J3'], 100, -1)
@@ -158,7 +151,7 @@ async def beancup_dropbean_1():
     await PTP(cf.set_coffee_bean_dripper1['J2'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper1['J1'], 100, -1)
     
-async def beancup_dropbean_2():        
+async def beancup_dropbean_2(): #수정       
     await PTP(cf.set_coffee_bean_dripper2['J1'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper2['J2'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper2['J3'], 100, -1)
@@ -169,7 +162,7 @@ async def beancup_dropbean_2():
     await PTP(cf.set_coffee_bean_dripper2['J2'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper2['J1'], 100, -1)
 
-async def beancup_dropbean_3():
+async def beancup_dropbean_3(): #수정
     await PTP(cf.set_coffee_bean_dripper3['J1'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper3['J2'], 100, -1)
     await PTP(cf.set_coffee_bean_dripper3['J3'], 100, -1)
@@ -181,9 +174,10 @@ async def beancup_dropbean_3():
     await PTP(cf.set_coffee_bean_dripper3['J1'], 100, -1)
 
 async def beancup_dropbean_end():
-    await PTP(cf.moving_coffee_bean['J3'], 100, -1)
-    await PTP(cf.moving_coffee_bean['J2'], 100, -1)
-    
+    await PTP(cf.moving_coffee_bean['J3'], 60, -1)
+    await PTP(cf.moving_coffee_bean['J2'], 60, -1) 
+    await PTP(cf.moving_coffee_bean['J1'], 60, -1)
+
 async def pick_the_cup():
     await movegripper(1, 100, 50, 50, 10000, 0)
     await PTP(cf.home_point["J"],100,-1)
@@ -460,7 +454,6 @@ async def new_set_dripper_3rd_pos():
 async def new_preparing_pick_dripper():
     print("드리퍼를 집기 위한 준비를 합니다.")
     await PTP(cf.new_preparing_pick_dripper["J1"], 100, -1)
-    await PTP(cf.new_preparing_pick_dripper["J2"], 100, -1)
 
 async def back_dripper_1st_pos():
     await PTP(cf.set_dripper_back_ready_pos["J1"], 100, -1)
@@ -493,76 +486,67 @@ async def back_dripper_3rd_pos():
     await PTP(cf.new_set_dripper_3rd_pos["J1"], 70, -1)
     await PTP(cf.new_preparing_pick_dripper["J2"], 70, -1)
 
+
 async def shaking_dripper1():
     print("1번 드리퍼의 원두를 평탄화합니다.")
-    await PTP(cf.new_shaking_dripper1["J1"], 100, -1)
-    await PTP(cf.new_shaking_dripper1["J2"], 100, -1)
+    await PTP(cf.new_shaking_dripper1["J1"], 30, -1)
+    await PTP(cf.new_shaking_dripper1["J2"], 30, -1)
+    await movegripper(1, 0, 50, 50, 10000, 0)
     await PTP(cf.new_shaking_dripper1["J3"], 100, -1)
-    await movegripper(1, 15, 50, 50, 10000, 0)
-    await PTP(cf.new_shaking_dripper1["J4"], 100, -1)
-    await PTP(cf.new_shaking_dripper1["J5"], 100, 500)
     await PTP(cf.new_shaking_dripper1["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J5"], 100, 500)
+    await PTP(cf.new_shaking_dripper1["J7"], 100, 500)
     await PTP(cf.new_shaking_dripper1["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper1["J4"], 100, 100)
-    await PTP(cf.new_shaking_dripper1["J3"], 20, -1)
-    await movegripper(1, 100, 50, 50, 10000, 0)
+    await PTP(cf.new_shaking_dripper1["J7"], 100, 500)
+    await PTP(cf.new_shaking_dripper1["J3"], 100, 500)
     await PTP(cf.new_shaking_dripper1["J2"], 100, -1)
-    await PTP(cf.new_shaking_dripper1["J1"], 100, -1)
+    await movegripper(1, 100, 50, 50, 10000, 0)
+    await PTP(cf.new_shaking_dripper1["J1"], 30, -1)
 
 async def shaking_dripper2():
-    print("1번 드리퍼의 원두를 평탄화합니다.")
-    await PTP(cf.new_shaking_dripper2["J1"], 100, -1)
-    await PTP(cf.new_shaking_dripper2["J2"], 100, -1)
-    await PTP(cf.new_shaking_dripper2["J3"], 100, -1)
+    print("2번 드리퍼의 원두를 평탄화합니다.")
+    await PTP(cf.new_shaking_dripper2["J1"], 60, -1)
+    await PTP(cf.new_shaking_dripper2["J2"], 60, -1)
+    await PTP(cf.new_shaking_dripper2["J3"], 60, -1)
     await movegripper(1, 15, 50, 50, 10000, 0)
-    await PTP(cf.new_shaking_dripper2["J4"], 100, -1)
-    await PTP(cf.new_shaking_dripper2["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper2["J4"], 100, 100)
+    await PTP(cf.new_shaking_dripper2["J4"], 60, -1)
+    await PTP(cf.new_shaking_dripper2["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper2["J4"], 60, 100)
     await PTP(cf.new_shaking_dripper2["J3"], 20, -1)
     await movegripper(1, 100, 50, 50, 10000, 0)
-    await PTP(cf.new_shaking_dripper2["J2"], 100, -1)
-    await PTP(cf.new_shaking_dripper2["J1"], 100, -1)
+    await PTP(cf.new_shaking_dripper2["J2"], 60, -1)
+    await PTP(cf.new_shaking_dripper2["J1"], 60, -1)
 
 async def shaking_dripper3():
-    print("1번 드리퍼의 원두를 평탄화합니다.")
-    await PTP(cf.new_shaking_dripper3["J1"], 100, -1)
-    await PTP(cf.new_shaking_dripper3["J2"], 100, -1)
-    await PTP(cf.new_shaking_dripper3["J3"], 100, -1)
-    await PTP(cf.new_shaking_dripper3["J4"], 100, -1)
+    print("3번 드리퍼의 원두를 평탄화합니다.")
+    await PTP(cf.new_shaking_dripper3["J1"], 60, -1)
+    await PTP(cf.new_shaking_dripper3["J2"], 60, -1)
+    await PTP(cf.new_shaking_dripper3["J3"], 60, -1)
     await movegripper(1, 15, 50, 50, 10000, 0)
-    await PTP(cf.new_shaking_dripper3["J5"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J7"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J7"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J7"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J7"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J6"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J7"], 100, 500)
-    await PTP(cf.new_shaking_dripper3["J5"], 100, 100)
-    await PTP(cf.new_shaking_dripper3["J4"], 20, -1)
-    await movegripper(1, 100, 50, 50, 10000, 0)
+    await PTP(cf.new_shaking_dripper3["J4"], 60, -1)
+    await PTP(cf.new_shaking_dripper3["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J5"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J6"], 60, 500)
+    await PTP(cf.new_shaking_dripper3["J4"], 60, 500)
     await PTP(cf.new_shaking_dripper3["J3"], 20, -1)
-    await PTP(cf.new_shaking_dripper3["J2"], 100, -1)
-    await PTP(cf.new_shaking_dripper3["J1"], 100, -1)
+    await movegripper(1, 100, 50, 50, 10000, 0)
+    await PTP(cf.new_shaking_dripper3["J2"], 60, -1)
+    await PTP(cf.new_shaking_dripper3["J1"], 60, -1)
 
 async def standard_spiral1(SPEED, ang, ang_sub1, ang_sub2, ang_sub3, ang_sub4, ang_sub5):
     repos = None

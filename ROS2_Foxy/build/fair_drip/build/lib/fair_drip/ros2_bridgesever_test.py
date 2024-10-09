@@ -2,16 +2,18 @@ import websocket
 import json
 
 # 웹소켓 서버의 주소
-URL = "ws://127.0.0.1:9090"  
+URL = "ws://192.168.58.16:9090"  
 
 def on_open(ws):
     msg = {
         "op": "publish",
-        "topic": "/fairdrip_cam",  
+        "topic": "/drip",  
         "type" : "std_msgs/String",
         "msg": {
             "data": "xyz"
         }
+
+        #while 
     }
 
     ws.send(json.dumps(msg))

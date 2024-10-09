@@ -16,6 +16,8 @@ fair_drip/control_Cup_Dis.py
 fair_drip/control_Order.py
 fair_drip/control_Temp_M.py
 fair_drip/control_v2.py
+fair_drip/db_ros2_bridgeserver_test.py
+fair_drip/listen_test.py
 fair_drip/robot_test.py
 fair_drip/ros2_bridgesever_test.py
 fair_drip/talker.py

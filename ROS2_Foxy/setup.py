@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'fair_lis = fair_drip.Ros2_Listener_Robot:main',
-            'talker = fair_drip.talker:main',
+            'talker = fair_drip.ros2_bridgesever_test:main',
         ],
     },
     package_data={

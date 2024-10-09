@@ -44,7 +44,6 @@ def newSPIRAL(J1, SPEED, Pa, DP):
         motion_state = robot.GetRobotMotionDone()
         if motion_state[1] == 1:
             break
-        # print("스파이럴 대기")
         time.sleep(0.1)
         
 def movegripper(index, pos, vel, force, max_time, last_arg=0):
@@ -54,7 +53,7 @@ def movegripper(index, pos, vel, force, max_time, last_arg=0):
         gripper_state = robot.GetGripperMotionDone()
         if gripper_state[2] == 1:  
             break
-        print("Gripper 동작 대기 중...")
+        print("Gripper moving ready...")
         time.sleep(0.1)
 
 def PTP(J=None, SPEED=70.0, BLEND=-1, P=None):
@@ -79,13 +78,24 @@ def transform_joint(pose):
 
 if __name__ == "__main__":
     
-    actionHome()
-    action00()
-    asyncio.run(control_v2.beancup_dropbean_ready())
-    asyncio.run(control_v2.beancup_dropbean_1())
-    asyncio.run(control_v2.beancup_dropbean_end())
-    asyncio.run(control_v2.shaking_dripper1())
-    actionHome()
+    #actionHome()
+    #action00()
+    #asyncio.run(control_v2.beancup_pick())
+    #asyncio.run(control_v2.beancup_dropbean_ready()) 
+    #asyncio.run(control_v2.beancup_dropbean_1())
+    #asyncio.run(control_v2.beancup_dropbean_ready()) 
+    #asyncio.run(control_v2.beancup_dropbean_2())
+    #asyncio.run(control_v2.beancup_dropbean_ready()) 
+    #asyncio.run(control_v2.beancup_dropbean_3())
+    #asyncio.run(control_v2.beancup_dropbean_ready()) 
+    #asyncio.run(control_v2.beancup_back())
+    #asyncio.run(control_v2.new_preparing_pick_dripper()) 
+    #asyncio.run(control_v2.shaking_dripper1()) 
+    #asyncio.run(control_v2.new_preparing_pick_dripper()) 
+    movegripper(1,15,50,50,10000,0)
+    #asyncio.run(control_v2.kettle_pick()) 
+    
+    #actionHome()
     # for i in range(10):
     #     actionHome()
     #     for i in range(4):
