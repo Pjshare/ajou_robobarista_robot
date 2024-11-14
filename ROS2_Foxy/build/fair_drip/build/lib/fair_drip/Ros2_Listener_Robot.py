@@ -5,6 +5,8 @@ import asyncio
 import websockets # type: ignore
 import json
 import time
+import socketio
+import pyttsx3
 
 import rclpy
 from rclpy.node import Node
@@ -20,9 +22,8 @@ import frrpc
 
 import fair_drip.conf_file as cf
 import fair_drip.control_v2 as rc
-import fair_drip.control_Temp_M  as tm
-import fair_drip.control_Cup_Dis  as cd
-import fair_drip.control_Order  as Or
+import fair_drip.control_Temp_M as tm
+import fair_drip.control_Order as Or
 
 import re
 ## Robot info
@@ -33,9 +34,21 @@ EP=[0.000, 0.000, 0.000, 0.000]
 DP=[1.000, 1.000, 1.000, 1.000, 1.000, 1.000]
 EP2=[0.000,0.000,0.000,0.000]
 
-TOTAL_STEP = 13
+#비전 데이터 
+dripper_data = []
+cup_data = []
+#order_service Flask server(주문 받는 서버) 주소s
+FLASK_SERVER_URI = 'ws://192.168.58.13:5555'
+VISION_SERVER_URI = 'ws://192.168.58.25:9999'
+#SERVING_SERVER_URI = 'ws://192.168.58.26:5000'
+# 비동기 Socket.IO 클라이언트 생성
+sio_flask = socketio.AsyncClient()
+sio_vision = socketio.AsyncClient()
+#sio_serving = socketio.AsyncClient()
 
+vision_ok = 0
 class Listener(Node):
+    step = 0
     def __init__(self):
         super().__init__('listener')
         self.publisher = self.create_publisher(String, '/robot', 10)
@@ -43,13 +56,24 @@ class Listener(Node):
         self.sub_check = self.create_subscription(
             String, 'pos', self.listener_callback, 10)
         self.sub_check
-        self.subscription = self.create_subscription(
-            String, 'drip', self.listener_callback, 10)
-        self.subscription
-
-        self.lock = asyncio.Lock()  
+        self.subscription_order = self.create_subscription(
+            String, 'order', self.listener_callback, 10)
+        self.subscription_vision = self.create_subscription(
+            String, 'vision', self.listener_vision_callback, 10)
         
-        self.websocket_uri = "ws://192.168.58.8:9090"
+        self.subscription_order
+        self.subscription_vision
+
+        global vision_ok
+        global dripper_data
+        global cup_data
+        
+        
+        self.lock = asyncio.Lock()  
+
+        self.websocket_uri = "ws://192.168.58.13:9090"
+        
+        
         try:
             self.loop = asyncio.get_event_loop()
         except RuntimeError:  
@@ -62,14 +86,64 @@ class Listener(Node):
         if self.websocket.open:
             self.get_logger().info('WebSocket connected successfully')
     
+
+    async def listener_vision_callback(self, msg):
+        print("CALLBACK : GOT VISION TOPIC")
+        data = msg['data'].strip()
+        data = data.replace("'", '"')
+        data = json.loads(data)
+        self.get_logger().info(f"Received raw data: {data}") 
+
+        # dripper 데이터 초기화 및 저장
+        dripper_data.clear()
+        for dripper in data['dripper']:
+            single_dripper_data = {}
+            single_dripper_data['order'] = dripper.get('order')
+            
+            # 좌표 정보 가져오기
+            coor = dripper.get('coordinate')
+            single_dripper_data['coordinate'] = coor if coor else []
+
+            # center 정보 가져오기
+            center = dripper.get('center')
+            single_dripper_data['center'] = center if center else []
+
+            # 존재 여부 정보
+            single_dripper_data['exist_dripper'] = dripper.get('exist_dripper')
+            single_dripper_data['exist_coffee_beans'] = dripper.get('exist_coffee_beans')
+
+            # dripper_data 리스트에 추가
+            dripper_data.append(single_dripper_data)
+
+        # cup 데이터 초기화 및 저장
+        cup_data.clear()
+        for cup in data['cup']:
+            single_cup_data = {}
+            single_cup_data['order'] = cup.get('order')
+            
+            # 좌표 정보 가져오기
+            coor = cup.get('coordinate')
+            single_cup_data['coordinate'] = coor if coor else []
+
+            # center 정보 가져오기
+            center = cup.get('center')
+            single_cup_data['center'] = center if center else []
+
+            # 존재 여부 정보
+            single_cup_data['exist_cup'] = cup.get('exist_cup')
+
+            # cup_data 리스트에 추가
+            cup_data.append(single_cup_data)
+
+        self.get_logger().info(f"Processed dripper data: {dripper_data}")
+        self.get_logger().info(f"Processed cup data: {cup_data}")     
+                
     async def listener_callback(self, msg):
         async with self.lock:  
             data = msg['data'].strip()
             data = data.replace("'", '"')
             data = json.loads(data)
             print(type(data))
-            sub_msg1 = data.get('conn')
-            sub_msg2 = data.get('pos')
 
             msg_Coffee = data['recipe'].get('coffee')
             msg_Type = data['recipe'].get('drip_type')
@@ -82,100 +156,211 @@ class Listener(Node):
             recipe_t = msg_TM.split(', ') if msg_TM else []
             self.get_logger().info(f"Received raw data: {data}")
             if None in [msg_Coffee]: 
-                
-                if sub_msg1:
-                    self.publish_msg_check(sub_msg1)
-                elif sub_msg2:
-                    await self.drip_clearing(sub_msg2)
-            else:
-                print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-                await rc.SetSpeed(10)
-                await rc.set_home()
+                print("Failed to get Coffee Data")
+            else: 
+                await sio_flask.connect(FLASK_SERVER_URI)
+                await sio_vision.connect(VISION_SERVER_URI) 
+                #await sio_serving.connect(SERVING_SERVER_URI)
                 await self.recipe_dripper(msg_Coffee, msg_Type, msg_Temp, msg_WTotal, msg_WM, len(recipe_w), msg_TM, len(recipe_t))
-            
+                # Define a coroutine to wait for the `vision_get` message and set `vision_ok` to 1
+    
+    ## 제어메인, 수정 필요  
+    # Or 모듈에서 check_drip_point 함수 정의
+    async def check_drip_point(self, dripper_data):
+        # 조건에 맞는 dripper 데이터를 필터링
+        print("CHECK_DRIP_POINT")
+        print(dripper_data)
+        valid_drippers = [
+            dripper['order'] for dripper in dripper_data
+            if dripper.get('exist_dripper') or dripper.get('exist_coffee_beans')
+        ]
+        # order 값이 가장 작은 dripper 선택
+        print("---------------------------------------------------------------")
+        print(valid_drippers)
+        return min(valid_drippers) if valid_drippers else None
+
+    # Or 모듈에서 check_cup_point 함수 정의
+    async def check_cup_point(self, cup_data):
+        # 조건에 맞는 cup 데이터를 필터링
+        valid_cups = [
+            cup['order'] for cup in cup_data
+            if cup.get('exist_cup')
+        ]
+        # order 값이 가장 작은 cup 선택
+        if valid_cups is None:  
+            print("NO valid Cup")
+        print(f'valid_cup : {min(valid_cups)}')
+        return min(valid_cups) if valid_cups else None
+
     async def recipe_dripper(self, coffee, type, temp, wtotal, wm, wmc, tm, tmc):
-        coffee_count = int(coffee)/2
         current_step = 0
         self.progress_info(current_step)
-
-        order_set1, order_set2, order_set3, order_set4 = await asyncio.gather(
-            Or.order_insert(coffee, str(wm)),
-            self.temp_S(temp),
-            Or.check_drip_point(),
-            Or.check_drip_select()
+        
+        #vision에 데이터 요청
+        asyncio.run_coroutine_threadsafe(self.request_vision_current_data(), self.loop)
+        #sleep(0.5)
+                
+        print()  # vision_ok가 1이 되면 줄바꿈
+        i = 0
+        while vision_ok != 1 :
+            if i < 10:
+                print('.', end='', flush=True)  # 줄바꿈 없이 출력
+                await asyncio.sleep(1)  # 비동기적으로 1초 대기
+                i += 1
+            else: 
+                i = 0
+        print()  # vision_ok가 1이 되면 줄바꿈
+        
+        drip_point, cup_point= await asyncio.gather(
+            self.check_drip_point(dripper_data), #drip할 위치 확인
+            self.check_cup_point(cup_data)       #Cup위치 확인
         )
-        current_step = 4
-        self.progress_info(current_step)
 
-        if order_set3 == None:
-            msg = '진행대기'
-            self.publish_msg_robot(msg)
+        # drop_point, cup_point 1 / 2 / 3 check
 
-        else:
-            await Or.order_update_m(order_set1[0], order_set1[1], order_set3)
-            await self.drip_set_move(order_set3, order_set4)
-            await Or.update_drip_point(order_set4)
-            current_step = 9
+        if vision_ok:
+            current_step = 4 #진행 step 업데이트
             self.progress_info(current_step)
-            if order_set3 is None:
-                print("준비상태 확인 ")
+
+            if (drip_point and cup_point) is None:  
+                print("Drip point and Cup Point is not chosen.\nPlease Check one more time")
+                time.sleep(1)
+                return await self.recipe_dripper(coffee, type, temp, wtotal, wm, wmc, tm, tmc)
             else:
-                await self.coffee_drop(order_set3, coffee_count)
-                current_step = 16
-                self.progress_info(current_step)
+                if coffee == 1: # 전주연 레시피
+                    print("home gaza~~~~")
+                    print(f'Drip Point: {dripper_data}\nCup Point: {cup_data}')
+                    await rc.set_home()
+                    #원두컵 집고 드립퍼에 붓기
+                    await self.coffee_drop(drip_point, cup_point)
+                    current_step = 10
+                    self.progress_info(current_step)
+                    
+                      #주전자 집기
+                    await rc.kettle_pick()
+                    current_step = 25
+                    self.progress_info(current_step)
+ 
+                      #물 붓기
+                    await rc.pouring_water()
+                    current_step = 45
+                    self.progress_info(current_step)
 
-                await self.cup_set_move(order_set3)
-                current_step = 19
-                self.progress_info(current_step)
+                      #레시피 만큼 얼마나 기다리는지, 물을 얼마나 붓는지.
+                    await rc.pouring_water_home()
+                    self.loop.create_task(self.speaking('Pouring water. Please wait. This is not Error human.'))
+                    await rc.spiral_dripper(drip_point)
+                    current_step = 65
+                    self.progress_info(current_step)
+ 
+                      #주전자 원위치
+                    await rc.kettle_back()
+                    current_step = 75
+                    self.progress_info(current_step)
 
-                await self.water_move(order_set2, temp)
-                current_step = 22
-                self.progress_info(current_step)
 
-                await self.drip_water(order_set3, type, wm, wmc, tm, tmc)
-                current_step = 26
-                self.progress_info(current_step)
+                    cureent_step = 90
+                    await rc.delivery(drip_point)
+                    self.progress_info(current_step)
+ 
+                      #손 원위치
+                    await rc.set_home()
+                    current_step = 95
+                    self.progress_info(current_step)
+                    self.speaking("zz")
+                    print("finish")
+                    current_step = 100
+                    self.progress_info(current_step)
+                    
+                    self.Send_to_Serving('hello')
+                    
+                elif coffee == 2: #테츠 카츠야
+                    print("테츠 카츠야 레시피")
+                    #self.Send_to_Serving()
 
-                current_step = 29
-                self.progress_info(current_step)
-
-                await rc.set_home()
-                current_step = 30
-                self.progress_info(current_step)
-                await Or.order_update_f(order_set1[0], order_set1[1])
-                print("finish")
-                await Or.update_drip_f(order_set3)
-                current_step = 31
-                self.progress_info(current_step)
 
     def progress_info(self, step):
-        pr = (step/TOTAL_STEP)*100
+        # TOTAL_STEP = 31
+        # pr = (step / TOTAL_STEP) * 100  # 진행률 계산
+        # ROS2 WebSocket으로 진행률 데이터를 보내는 함수 호출
+        asyncio.run_coroutine_threadsafe(self.send_websocket_progress(step), self.loop)
+    async def speaking(self, txt_en):
+        engine = pyttsx3.init()
 
-        self.publish_msg_robot(pr)
+        engine.setProperty('rate',200)
+        engine.say(txt_en)
+        engine.runAndWait()
+
+    # 서버에 연결 시 호출되는 이벤트 핸들러
+    @sio_flask.event
+    async def connect():
+        print("Connected to Flask server")
+
+    @sio_vision.event
+    async def connect():
+        print("Connected to Vision server")
+        
+    #@sio_serving.event
+    #async def connect():
+        #print("Connected to Serving server")
+        
+    # 서버와의 연결 해제 시 호출되는 이벤트 핸들러
+    @sio_flask.event
+    async def disconnect():
+        print("Disconnected from Flask server")
     
-    def publish_msg_robot(self, msg):
-        message_data = {
-            "op": "publish",  
-            "topic": "/robot", 
-            "msg": {
-                "data": str(msg)
-            }
-        }
-        message_json = json.dumps(message_data)  
+    @sio_vision.event
+    async def disconnect():
+        print("Disconnected from Vision server")
 
-        asyncio.run_coroutine_threadsafe(self.send_websocket_message(message_json), self.loop)
+    #@sio_serving.event
+    #async def disconnect():
+        #print("Disconnected from Serving server")
     
-    def publish_msg_check(self, msg):
-        message_data = {
-            "op": "publish", 
-            "topic": "/check",  
-            "msg": {
-                "data": "0"
+    @sio_vision.on('vision_get')
+    async def on_vision_get():
+        global vision_ok
+        vision_ok = 1
+        print("Received vision_get message")
+        
+        
+        # 진행률 데이터를 서버로 전송하는 함수  
+    async def send_websocket_progress(self, progress):
+        try:
+            message = {
+                "op": "progress_update",
+                "progress": progress
             }
-        }
-        message_json = json.dumps(message_data)  
+            # 서버로 진행률 데이터 전송
+            await sio_flask.emit('progress_update', message)
+            print(f'Progress sent to Flask Server: {message}')
+        except Exception as e:
+            print(f"Failed to send progress to Flask Server: {str(e)}")
 
-        asyncio.run_coroutine_threadsafe(self.send_websocket_message(message_json), self.loop)
+    async def request_vision_current_data(self):
+        try:
+            await sio_vision.emit('data plz')
+            print('Requested vision data to vision server')
+        except Exception as e:  
+            print(f"Failed to request to Vision server : {str(e)}")
+            
+    async def Send_to_Serving(self,msg):
+        try:
+            #await sio_serving.emit('Done',msg)
+            print('Send done to Serving server')
+        except Exception as e:  
+            print(f"Failed to request to Serving server : {str(e)}")
+            
+    async def wait_for_vision(self):
+        i = 0
+        while self.vision_ok != 1:
+            if i < 10:
+                print('.', end='', flush=True)  # 줄바꿈 없이 출력
+                time.sleep(1)  # 비동기적으로 1초 대기
+                i += 1
+            else: 
+                i = 0
+        print()  # vision_ok가 1이 되면 줄바꿈
     
     def time_check():
         now = time.localtime()
@@ -188,843 +373,53 @@ class Listener(Node):
             await self.websocket.send(message)  
             self.get_logger().info(f'Published to WebSocket: {message}')
 
-    async def temp_S(self, temp):
-        try:
-            response = await tm.async_send_at_command(f'AT+TEMP={temp}')
-            await tm.set_target_temperature(temp)
-            await tm.setup_parameters(1, temp, 430)
+    async def coffee_drop(self, drop_point, cup_point): ##원두 to 드리퍼 이동
+        await rc.beancup_pick(cup_point)
+        await rc.beancup_dropbean_ready()
+        await rc.beancup_dropbean(drop_point)
+        await rc.beancup_back(cup_point)
+        await rc.new_preparing_pick_dripper()
+        await rc.shaking_dripper(drop_point)
+        await rc.new_preparing_pick_dripper()
 
-            temp_res = await tm.query_temperature()
-            print(temp_res)
-            match = re.search(r'\+TEMP:(\d+),\s*(\d+)', str(temp_res))
-            if match:
-                temp1 = match.group(1)
-                temp2 = match.group(2)
-                if abs(int(temp1) - int(temp2)) <= 1:                
-                    check_msg = 'ok'
-                    return check_msg
-                
-                else:                
-                    check_msg = 'ng'
-                    return check_msg
-        except:
-            self.get_logger().info('Temp_Set Run Error')
-    
-            pass
-    async def temp_M(self):
-        try:
-            temp_res = await tm.query_temperature()
-            match = re.search(r'\+TEMP:(\d+),\s*(\d+)', str(temp_res))
-            if match:     
-                temp1 = match.group(1)
-                temp2 = match.group(2)    
-                if abs(int(temp1) - int(temp2)) <= 1:                
-                    check_msg = 'ok'
-                    return check_msg  
-                
-        except:
-            self.get_logger().info('Temp_Move Run Error')
-    
-            
-            check_msg = 'ok'
-            return check_msg
-            
-    async def drip_set_move(self, drip_point, drip_select): # drip 위치
-        if drip_select == 1:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper1()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
 
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper1()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper1()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-
-        elif drip_select == 2:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper2()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper2()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper2()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-            
-        elif drip_select == 3:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper3()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper3()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper3()
-                await rc.new_ready_for_set_1st_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-            
-        elif drip_select == 4:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper4()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper4()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper4()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-            
-        elif drip_select == 5:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper5()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper5()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper5()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-            
-        elif drip_select == 6:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper6()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper6()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper6()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-            
-        elif drip_select == 7:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper7()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper7()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper7()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-            
-        elif drip_select == 8:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper8()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper8()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper8()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-            
-        elif drip_select == 9:
-            if drip_point == 1:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper9()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_1st_pos()
-
-            elif drip_point == 2:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper9()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_2nd_pos()
-
-            elif drip_point == 3:
-                await rc.new_preparing_pick_dripper()
-                await rc.new_pick_dripper9()
-                await rc.new_ready_for_set_234_floor_dripper()
-                await rc.new_set_dripper_3rd_pos()
-
-    async def coffee_drop(self, drop_point, coffee_count):
-        await rc.beancup_pick()
-
-        for i in range(int(coffee_count)):
-            await rc.beancup_grinding_bean_in()
-            time.sleep(2.3)
-            await rc.beancup_grinding_bean_out()
         
-        if drop_point == 1:
-            await rc.beancup_dropbean_ready()
-            await rc.beancup_dropbean_1()
-            await rc.beancup_dropbean_end()
-        elif drop_point == 2:
-            await rc.beancup_dropbean_ready()
-            await rc.beancup_dropbean_2()
-            await rc.beancup_dropbean_end()
-        elif drop_point == 3:
-            await rc.beancup_dropbean_ready()
-            await rc.beancup_dropbean_3()
-            await rc.beancup_dropbean_end()
-        
-        await rc.beancup_back()
-
-        if drop_point == 1:
-            await rc.shaking_dripper1()
-        elif drop_point == 2:
-            await rc.shaking_dripper2()
-        elif drop_point == 3:
-            await rc.shaking_dripper3()
-
-    async def cup_set_move(self, cup_point): 
-        await rc.pick_the_cup_s()
-        await cd.cup_out()
-        await asyncio.sleep(2)
-        await rc.pick_the_cup_f()
-
-        if cup_point == 1:
-            await rc.new_set_cup1()
-
-        elif cup_point == 2:
-            await rc.new_set_cup2()
-
-        elif cup_point == 3:
-            await rc.new_set_cup3()
-
-    async def water_move(self, temp_info, temp):
-        if temp_info == 'ok': 
-            await tm.trigger_output(1)
-            await rc.kettle_pick()
-        else:
-            await self.temp_S(temp)
-            while True:
-                msg = await self.temp_M()
-                if msg == 'ok':
-                    break
-                await asyncio.sleep(1)
-
-            await tm.trigger_output(1)
-            await rc.kettle_pick()
-
-    async def drip_water(self, drip_point, type_re, wm, wmc, tm, tmc):
-        i = 0
-        SPEED = 100
-        wm = [int(w.strip()) for w in wm.split(',')]
-        tm = [int(t.strip()) for t in tm.split(',')]
-        if drip_point == 1:
-            if type_re == '0': # 그냥 붓기
-                for w in range(wmc):
-                    print(w)
-                    now = time.localtime()
-                    if wm[i] == 40:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = -0.72 * i# j5
-                            ANG_SUB2 = 0.6 * i# j4
-                            ANG_SUB3 = -1.2 * i# j3
-                            ANG_SUB4 = 0.6 * i# j2
-                            ANG_SUB5 = -0.72 * i# j1
-                        else:
-                            ANG = 1.5 * i
-                            ANG_SUB1 = -0.72 * i# j5
-                            ANG_SUB2 = 0.6 * i# j4
-                            ANG_SUB3 = -1.2 * i# j3
-                            ANG_SUB4 = 0.6 * i# j2
-                            ANG_SUB5 = -0.72 * i# j1
-
-                    elif wm[i] == 50:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = -0.96 * i# j5
-                            ANG_SUB2 = 0.8 * i# j4
-                            ANG_SUB3 = -1.6 * i# j3
-                            ANG_SUB4 = 0.8 * i# j2
-                            ANG_SUB5 = -0.96 * i# j1
-                            
-                        else:
-                            ANG = 2 * i
-                            ANG_SUB1 = -0.96 * i# j5
-                            ANG_SUB2 = 0.8 * i# j4
-                            ANG_SUB3 = -1.6 * i# j3
-                            ANG_SUB4 = 0.8 * i# j2
-                            ANG_SUB5 = -0.96 * i# j1
-
-                    elif wm[i] == 60:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = -1.44 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -2.4 * i# j3
-                            ANG_SUB4 = 1.2 * i# j2
-                            ANG_SUB5 = -1.44 * i# j1
-                        else:
-                            ANG = 3 * i
-                            ANG_SUB1 = -1.44 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -2.4 * i# j3
-                            ANG_SUB4 = 1.2 * i# j2
-                            ANG_SUB5 = -1.44 * i# j1
-                    else:
-                        ANG = 1
-                        ANG_SUB1 = -0.48 * i# j5
-                        ANG_SUB2 = 0.4 * i# j4
-                        ANG_SUB3 = -0.8 * i# j3
-                        ANG_SUB4 = 0.4 * i# j2
-                        ANG_SUB5 = -0.48 * i# j1
-                        
-                    await rc.standard_pour1(ANG, ANG_SUB1, ANG_SUB2, ANG_SUB3, ANG_SUB4, ANG_SUB5)
-                    next = time.localtime()
-                    time_difference = time.mktime(next) - time.mktime(now)
-                    
-                    print(float(tm[i]))
-                    print(float(tm[i])-time_difference)
-                    await asyncio.sleep(float(tm[i])-time_difference)
-                    i =+ 1
-            else: # 스파이럴 붓기
-                for w in range(wmc):
-                    now = time.localtime()
-                    if wm[i] == 40:
-                        if i == 0:
-                            ANG = 1.5 * i
-                            ANG_SUB1 = -0.72 * i# j5
-                            ANG_SUB2 = 0.6 * i# j4
-                            ANG_SUB3 = -1.2 * i# j3
-                            ANG_SUB4 = 0.6 * i# j2
-                            ANG_SUB5 = -0.72 * i# j1
-                        else:
-                            ANG = 1.5 * i
-                            ANG_SUB1 = -0.72 * i# j5
-                            ANG_SUB2 = 0.6 * i# j4
-                            ANG_SUB3 = -1.2 * i# j3
-                            ANG_SUB4 = 0.6 * i# j2
-                            ANG_SUB5 = -0.72 * i# j1
-
-                    elif wm[i] == 50:
-                        if i == 0:
-                            ANG = 2 * i
-                            ANG_SUB1 = -0.96 * i# j5
-                            ANG_SUB2 = 0.8 * i# j4
-                            ANG_SUB3 = -1.6 * i# j3
-                            ANG_SUB4 = 0.8 * i# j2
-                            ANG_SUB5 = -0.96 * i# j1
-                            
-                        elif i == 1 or i == 2:
-                            ANG = 2 * i
-                            ANG_SUB1 = -0.96 * i# j5
-                            ANG_SUB2 = 0.8 * i# j4
-                            ANG_SUB3 = -1.6 * i# j3
-                            ANG_SUB4 = 0.8 * i# j2
-                            ANG_SUB5 = -0.96 * i# j1
-
-                        elif i == 3 or i == 4:
-                            ANG = 2 * i + 0.5
-                            ANG_SUB1 = -0.96 * i# j5
-                            ANG_SUB2 = 0.8 * i# j4
-                            ANG_SUB3 = -1.6 * i# j3
-                            ANG_SUB4 = 0.8 * i# j2
-                            ANG_SUB5 = -0.96 * i# j1
-                        
-                        elif i >= 5:
-                            ANG = 2 * i + 0.75
-                            ANG_SUB1 = -0.96 * i# j5
-                            ANG_SUB2 = 0.8 * i# j4
-                            ANG_SUB3 = -1.6 * i# j3
-                            ANG_SUB4 = 0.8 * i# j2
-                            ANG_SUB5 = -0.96 * i# j1
-
-                    elif wm[i] == 60:
-                        if i == 0:
-                            ANG = 3 * i
-                            ANG_SUB1 = -1.44 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -2.4 * i# j3
-                            ANG_SUB4 = 1.2 * i# j2
-                            ANG_SUB5 = -1.44 * i# j1
-                        else:
-                            ANG = 3 * i
-                            ANG_SUB1 = -1.44 * i# j5
-                            ANG_SUB2 = 1.5 * i# j4
-                            ANG_SUB3 = -3 * i# j3
-                            ANG_SUB4 = 1.5 * i# j2
-                            ANG_SUB5 = -1.44 * i# j1
-                    else:
-                        ANG = 1
-                        ANG_SUB1 = -0.48 * i# j5
-                        ANG_SUB2 = 0.4 * i# j4
-                        ANG_SUB3 = -0.8 * i# j3
-                        ANG_SUB4 = 0.4 * i# j2
-                        ANG_SUB5 = -0.48 * i# j1
-
-                    await rc.standard_spiral1(SPEED, ANG, ANG_SUB1, ANG_SUB2, ANG_SUB3, ANG_SUB4, ANG_SUB5)
-                    next = time.localtime()
-                    time_difference = time.mktime(next) - time.mktime(now)
-                    print("소요시간 : ",time_difference)
-                    print(float(tm[i]))
-                    print(float(tm[i])-time_difference)
-                    await asyncio.sleep(float(tm[i])-time_difference)
-                    i =+ 1
-        elif drip_point == 2:
-            if type_re == '0': # 그냥 붓기
-                for w in range(wmc):
-                    now = time.localtime()
-                    if wm[i] == 40:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.075 * i# j5
-                            ANG_SUB2 = 0.9 * i# j4
-                            ANG_SUB3 = -0.75 * i# j3
-                        else:
-                            ANG = 1.5 * i
-                            ANG_SUB1 = 0.075 * i# j5
-                            ANG_SUB2 = 0.9 * i# j4
-                            ANG_SUB3 = -0.75 * i# j3
-
-                    elif wm[i] == 50:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-                            
-                        elif i == 1 or i == 2:
-                            ANG = 2 * i
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-                        
-                        elif i == 3 or i == 4:
-                            ANG = 2 * i + 0.5
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-                        
-                        elif i >= 5:
-                            ANG = 2 * i + 0.75
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-                        
-                    elif wm[i] == 60:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.3 * i# j5
-                            ANG_SUB2 = 1.8 * i# j4
-                            ANG_SUB3 = -1.5 * i# j3
-                        else:
-                            ANG = 3 * i
-                            ANG_SUB1 = 0.3 * i# j5
-                            ANG_SUB2 = 1.8 * i# j4
-                            ANG_SUB3 = -1.5 * i# j3
-                    else:
-                        ANG = 1
-                        ANG_SUB1 = 0.1 * i# j5
-                        ANG_SUB2 = 0.6 # j4
-                        ANG_SUB3 = -0.5 * i# j3
-                    await rc.standard_pour2(ANG, ANG_SUB1, ANG_SUB2, ANG_SUB3)
-                    next = time.localtime()
-                    time_difference = time.mktime(next) - time.mktime(now)
-                    await asyncio.sleep(float(tm[i])-time_difference)
-                    i =+ 1
-            else:      
-                for w in range(wmc):
-                    now = time.localtime()
-                    if wm[i] == 40:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.075 * i# j5
-                            ANG_SUB2 = 0.9 * i# j4
-                            ANG_SUB3 = -0.75 * i# j3
-                        else:
-                            ANG = 1.5 * i
-                            ANG_SUB1 = 0.075 * i# j5
-                            ANG_SUB2 = 0.9 * i# j4
-                            ANG_SUB3 = -0.75 * i# j3
-
-                    elif wm[i] == 50:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-                            
-                        elif i == 1 or i == 2:
-                            ANG = 2 * i
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-
-                        elif i == 3 or i == 4:
-                            ANG = 2 * i + 0.5
-                            ANG_SUB1 = (0.2 * i)+0.05# j5
-                            ANG_SUB2 = (1.2 * i)+0.3# j4
-                            ANG_SUB3 = (-1 * i)+0.25# j3
-                        
-                        elif i >= 5:
-                            ANG = 2 * i + 0.75
-                            ANG_SUB1 = (0.2 * i)+0.075# j5
-                            ANG_SUB2 = (1.2 * i)+0.45# j4
-                            ANG_SUB3 = (-1 * i)+0.375# j3
-
-                    elif wm[i] == 60:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.3 * i# j5
-                            ANG_SUB2 = 1.8 * i# j4
-                            ANG_SUB3 = -1.5 * i# j3
-                        else:
-                            ANG = 3 * i
-                            ANG_SUB1 = 0.3 * i# j5
-                            ANG_SUB2 = 1.8 * i# j4
-                            ANG_SUB3 = -1.5 * i# j3
-                    else:
-                        ANG = 1
-                        ANG_SUB1 = 0.1 * i# j5
-                        ANG_SUB2 = 0.6 # j4
-                        ANG_SUB3 = -0.5 * i# j3
-                    await rc.standard_spiral2(SPEED, ANG, ANG_SUB1, ANG_SUB2, ANG_SUB3)
-                    next = time.localtime()
-                    time_difference = time.mktime(next) - time.mktime(now)
-                    await asyncio.sleep(float(tm[i])-time_difference)
-                    i =+ 1
-        elif drip_point == 3:
-            if type_re == '0': # 그냥 붓기
-                for w in range(wmc):
-                    now = time.localtime()
-                    if wm[i] == 40:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.1 * i# j5
-                            ANG_SUB2 = 0.6 # j4
-                            ANG_SUB3 = -0.5 * i# j3
-                        else:
-                            ANG = 1.5 * i
-                            ANG_SUB1 = 0.1 * i# j5
-                            ANG_SUB2 = 0.6 # j4
-                            ANG_SUB3 = -0.5 * i# j3
-                    elif wm[i] == 50:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.1 * i# j5
-                            ANG_SUB2 = 0.6 # j4
-                            ANG_SUB3 = -0.5 * i# j3
-                        else:
-                            ANG = 2 * i
-                            ANG_SUB1 = 0.1 * i# j5
-                            ANG_SUB2 = 0.6 # j4
-                            ANG_SUB3 = -0.5 * i# j3
-                    elif wm[i] == 60:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.1 * i# j5
-                            ANG_SUB2 = 0.6 # j4
-                            ANG_SUB3 = -0.5 * i# j3
-                        else:
-                            ANG = 3 * i
-                            ANG_SUB1 = 0.1 * i# j5
-                            ANG_SUB2 = 0.6 # j4
-                            ANG_SUB3 = -0.5 * i# j3
-                    else:
-                        ANG = 1
-                        ANG_SUB1 = 0.1 * i# j5
-                        ANG_SUB2 = 0.6 # j4
-                        ANG_SUB3 = -0.5 * i# j3
-                    await rc.standard_pour3(ANG, ANG_SUB1, ANG_SUB2, ANG_SUB3)
-                    next = time.localtime()
-                    time_difference = time.mktime(next) - time.mktime(now)
-                    await asyncio.sleep(float(tm[i])-time_difference)
-                    i =+ 1
-            else:      
-                for w in range(wmc):
-                    now = time.localtime()
-                    if wm[i] == 40:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.075 * i# j5
-                            ANG_SUB2 = 0.9 * i# j4
-                            ANG_SUB3 = -0.75 * i# j3
-                        else:
-                            ANG = 1.5 * i
-                            ANG_SUB1 = 0.075 * i# j5
-                            ANG_SUB2 = 0.9 * i# j4
-                            ANG_SUB3 = -0.75 * i# j3
-
-                    elif wm[i] == 50:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-                            
-                        elif i == 1 or i == 2:
-                            ANG = 2 * i
-                            ANG_SUB1 = 0.2 * i# j5
-                            ANG_SUB2 = 1.2 * i# j4
-                            ANG_SUB3 = -1 * i# j3
-
-                        elif i == 3 or i == 4:
-                            ANG = 2 * i + 0.5
-                            ANG_SUB1 = (0.2 * i)+0.05# j5
-                            ANG_SUB2 = (1.2 * i)+0.3# j4
-                            ANG_SUB3 = (-1 * i)+0.25# j3
-                        
-                        elif i >= 5:
-                            ANG = 2 * i + 0.75
-                            ANG_SUB1 = (0.2 * i)+0.075# j5
-                            ANG_SUB2 = (1.2 * i)+0.45# j4
-                            ANG_SUB3 = (-1 * i)+0.375# j3
-
-                    elif wm[i] == 60:
-                        if i == 0:
-                            ANG = 0
-                            ANG_SUB1 = 0.3 * i# j5
-                            ANG_SUB2 = 1.8 * i# j4
-                            ANG_SUB3 = -1.5 * i# j3
-                        else:
-                            ANG = 3 * i
-                            ANG_SUB1 = 0.3 * i# j5
-                            ANG_SUB2 = 1.8 * i# j4
-                            ANG_SUB3 = -1.5 * i# j3
-                    else:
-                        ANG = 1
-                        ANG_SUB1 = 0.1 * i# j5
-                        ANG_SUB2 = 0.6 # j4
-                        ANG_SUB3 = -0.5 * i# j3
-                    await rc.standard_spiral3(SPEED, ANG, ANG_SUB1, ANG_SUB2, ANG_SUB3)
-                    next = time.localtime()
-                    time_difference = time.mktime(next) - time.mktime(now)
-                    await asyncio.sleep(float(tm[i])-time_difference)
-                    i =+ 1
-        print("drip end")
-        
-        await rc.pouring_water()
-        await asyncio.sleep(2)
-        await rc.kettle_back()
-
-    async def drip_clearing(self, drip_point): # 드리퍼 꺼냈던 위치로 재배치
-        drip_select = await Or.check_dripback_select()
-        if drip_select == 1:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                           
-                await rc.back_pick_dripper1()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper1()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper1()
-
-        elif drip_select == 2:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper2()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper2()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper2()
-            
-        elif drip_select == 3:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper3()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper3()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper3()
-            
-        elif drip_select == 4:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper4()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper4()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper4()
-            
-        elif drip_select == 5:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper5()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper5()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper5()
-            
-        elif drip_select == 6:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper6()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper6()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper6()
-            
-        elif drip_select == 7:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper7()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper7()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper7()
-            
-        elif drip_select == 8:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper8()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper8()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper8()
-            
-        elif drip_select == 9:
-            if drip_point == '1':
-                await rc.back_dripper_1st_pos()
-                
-                await rc.back_pick_dripper9()
-
-            elif drip_point == '2':
-                await rc.back_dripper_2nd_pos()
-
-                await rc.back_pick_dripper9()
-
-            elif drip_point == '3':
-                await rc.back_dripper_3rd_pos()
-
-                await rc.back_pick_dripper9()
-        await Or.update_drip_f2(int(drip_point))
-        await Or.update_drip_point_f(drip_select)
-        await rc.set_home()
-
-async def listen(listener_node):
-    uri = "ws://192.168.58.8:9090"
+async def listen_order(listener_node):
+    uri = "ws://192.168.58.13:9090"
     async with websockets.connect(uri) as websocket:
         subscribe_msg = {
-            "op": "subscribe",
-            "topic": "/drip",
-            "type": "std_msgs/String"
-        }
+                "op": "subscribe",
+                "topic": "/order",
+                "type": "std_msgs/String"
+            }
         await websocket.send(json.dumps(subscribe_msg))
-
         while True:
             message = await websocket.recv()
             data = json.loads(message)
             print(data)
             if 'msg' in data:
                 await listener_node.listener_callback(data['msg'])
-            
+
+async def listen_vision(listener_node):
+    uri = "ws://192.168.58.13:9090"
+    async with websockets.connect(uri) as websocket:
+        subscribe_msg = {
+                "op": "subscribe",
+                "topic": "/vision",
+                "type": "std_msgs/String"
+            }
+        await websocket.send(json.dumps(subscribe_msg))
+        while True:
+            message = await websocket.recv()
+            data = json.loads(message)
+            print(data)
+            if 'msg' in data:
+                await listener_node.listener_vision_callback(data['msg'])
+    
 def main(args=None):
     rclpy.init(args=args)
     listener = Listener()
-    asyncio.get_event_loop().run_until_complete(listen(listener))
+    asyncio.get_event_loop().run_until_complete(asyncio.gather(listen_order(listener),listen_vision(listener)))
     rclpy.spin(listener)
     listener.destroy_node()
     rclpy.shutdown()

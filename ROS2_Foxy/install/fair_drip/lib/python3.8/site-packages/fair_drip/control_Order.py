@@ -88,132 +88,101 @@ async def order_update_f(No, S_Time_log):
 
     conn.close()
 
-async def update_drip_f(pos):
-    conn = await Access()
+# async def update_drip_f(pos):
+#     conn = await Access()
     
-    async with conn.cursor() as cursor:
-        DATA = await DBset_Load()    
-        DT = DATA['DB']['STATETABLE']
-        if pos == 1:
-            Update_Q = f"UPDATE {DT} SET drip_state = '완료' WHERE drip_point = 'DripHole_1'"
-        elif pos == 2:
-            Update_Q = f"UPDATE {DT} SET drip_state = '완료' WHERE drip_point = 'DripHole_2'"
-        elif pos == 3:
-            Update_Q = f"UPDATE {DT} SET drip_state = '완료' WHERE drip_point = 'DripHole_3'"
-        await cursor.execute(Update_Q)
-        await conn.commit()
+#     async with conn.cursor() as cursor:
+#         DATA = await DBset_Load()    
+#         DT = DATA['DB']['STATETABLE']
+#         if pos == 1:
+#             Update_Q = f"UPDATE {DT} SET drip_state = '완료' WHERE drip_point = 'DripHole_1'"
+#         elif pos == 2:
+#             Update_Q = f"UPDATE {DT} SET drip_state = '완료' WHERE drip_point = 'DripHole_2'"
+#         elif pos == 3:
+#             Update_Q = f"UPDATE {DT} SET drip_state = '완료' WHERE drip_point = 'DripHole_3'"
+#         await cursor.execute(Update_Q)
+#         await conn.commit()
 
-    conn.close()
+#     conn.close()
 
 
-async def update_drip_f2(pos):
-    conn = await Access()
+# async def update_drip_f2(pos):
+#     conn = await Access()
     
-    async with conn.cursor() as cursor:
-        DATA = await DBset_Load()    
-        DT = DATA['DB']['STATETABLE']
-        if pos == 1:
-            Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE drip_point = 'DripHole_1'"
-        elif pos == 2:
-            Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE drip_point = 'DripHole_2'"
-        elif pos == 3:
-            Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE drip_point = 'DripHole_3'"
-        await cursor.execute(Update_Q)
-        await conn.commit()
+#     async with conn.cursor() as cursor:
+#         DATA = await DBset_Load()    
+#         DT = DATA['DB']['STATETABLE']
+#         if pos == 1:
+#             Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE drip_point = 'DripHole_1'"
+#         elif pos == 2:
+#             Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE drip_point = 'DripHole_2'"
+#         elif pos == 3:
+#             Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE drip_point = 'DripHole_3'"
+#         await cursor.execute(Update_Q)
+#         await conn.commit()
 
-    conn.close()
+#     conn.close()
 
-async def update_drip_point_f(pos):
-    pos = int(pos)
-    conn = await Access()
+# async def update_drip_point_f(pos):
+#     pos = int(pos)
+#     conn = await Access()
 
-    async with conn.cursor() as cursor:
-        DATA = await DBset_Load()    
-        DT = DATA['DB']['STATETABLE']
+#     async with conn.cursor() as cursor:
+#         DATA = await DBset_Load()    
+#         DT = DATA['DB']['STATETABLE']
 
-        Update_Q = f"UPDATE {DT} SET drip_state = '준비대기' WHERE No = '{int(pos)}'"
+#         Update_Q = f"UPDATE {DT} SET drip_state = '준비대기' WHERE No = '{int(pos)}'"
         
-        await cursor.execute(Update_Q)
-        await conn.commit()
+#         await cursor.execute(Update_Q)
+#         await conn.commit()
 
-    conn.close()
+#      conn.close()
 
-async def update_drip_point(pos):
-    conn = await Access()
+##DB 수정 필요 
+# async def update_drip_point(pos): 
+#     conn = await Access()
 
-    async with conn.cursor() as cursor:
-        DATA = await DBset_Load()    
-        DT = DATA['DB']['STATETABLE']
+#     async with conn.cursor() as cursor:
+#         DATA = await DBset_Load()    
+#         DT = DATA['DB']['STATETABLE']
 
-        Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE No = '{pos}'"
+#         Update_Q = f"UPDATE {DT} SET drip_state = '없음' WHERE No = '{pos}'"
        
-        await cursor.execute(Update_Q)
-        await conn.commit()
+#         await cursor.execute(Update_Q)
+#         await conn.commit()
 
-    conn.close()
+#     conn.close()
 
-async def check_drip_point():
-    conn = await Access()
+async def check_drip_point(dripper_data):
+    # 사용 가능한 드리퍼 중 가장 낮은 order를 찾기 위한 초기값
+    selected_point = None
+    print("CONTROL_ORDER")
+    print("DRIP+POINT")
 
-    async with conn.cursor() as cursor:
-        DATA = await DBset_Load()    
-        DT = DATA['DB']['STATETABLE']
+    
+    for dripper in dripper_data:
+        # 조건을 만족하는 드리퍼 찾기
+        if dripper['exist_dripper'] is True and dripper['exist_coffee_beans'] is True:
+            # 첫 번째로 조건을 만족하는 드리퍼거나, 현재 선택된 order보다 낮으면 업데이트
+            if selected_point is None or dripper['order'] < selected_point:
+                selected_point = dripper['order']
 
-        Update_Q = f"SELECT drip_state FROM {DT} WHERE drip_point IN ('DripHole_1', 'DripHole_2', 'DripHole_3')"
-        await cursor.execute(Update_Q)
-
-        check_point = await cursor.fetchall()
-
-        selected_point = None
-        if check_point[0][0] == '없음':
-            selected_point = 1
-        elif check_point[1][0] == '없음':
-            selected_point = 2
-        elif check_point[2][0] == '없음':
-            selected_point = 3
-        else:
-            selected_point = 1
-    conn.close()
+    print("Select Point"+selected_point)
     return selected_point
 
-async def check_drip_select():
-    conn = await Access()
 
-    async with conn.cursor() as cursor:
-        DATA = await DBset_Load()    
-        DT = DATA['DB']['STATETABLE']
+async def check_cup_point(cup_data):
+    # 사용 가능한 컵 중 가장 낮은 order를 찾기 위한 초기값
+    print("CONTROL_ORDER")
+    print("CUP+POINT")
+    selected_point = None
 
-        Update_Q = f"SELECT drip_state FROM {DT} WHERE drip_point IN ('1층_1', '1층_2', '1층_3', '2층_1', '2층_2', '2층_3', '3층_1', '3층_2', '3층_3')"
-        await cursor.execute(Update_Q)
-
-        check_point = await cursor.fetchall()
-
-        selected_point = None
-        for idx, state in enumerate(check_point):
-            if state[0] == '준비완료':
-                selected_point = idx + 1
-                break
-
-    conn.close()
+    for cup in cup_data:
+        # exist_cup이 False인 (비어 있지 않은) 컵을 찾기
+        if cup['exist_cup'] is True:
+            # 첫 번째로 조건을 만족하는 컵이거나, 현재 선택된 order보다 낮으면 업데이트
+            if selected_point is None or cup['order'] < selected_point:
+                selected_point = cup['order']
+    print("Select Point"+selected_point)
     return selected_point
 
-async def check_dripback_select():
-    conn = await Access()
-
-    async with conn.cursor() as cursor:
-        DATA = await DBset_Load()    
-        DT = DATA['DB']['STATETABLE']
-
-        Update_Q = f"SELECT drip_state FROM {DT} WHERE drip_point IN ('1층_1', '1층_2', '1층_3', '2층_1', '2층_2', '2층_3', '3층_1', '3층_2', '3층_3')"
-        await cursor.execute(Update_Q)
-
-        check_point = await cursor.fetchall()
-
-        selected_point = None
-        for idx, state in enumerate(check_point):
-            if state[0] == '없음':
-                selected_point = idx + 1
-                break
-
-    conn.close()
-    return selected_point

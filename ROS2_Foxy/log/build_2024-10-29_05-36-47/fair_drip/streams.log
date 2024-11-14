@@ -1,0 +1,37 @@
+[0.459s] Invoking command in '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy': PYTHONPATH=/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base build/fair_drip build --build-base /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build install --record /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/install.log --install-scripts $base/lib/fair_drip --single-version-externally-managed install_data
+[0.588s] running egg_info
+[0.588s] writing build/fair_drip/fair_drip.egg-info/PKG-INFO
+[0.589s] writing dependency_links to build/fair_drip/fair_drip.egg-info/dependency_links.txt
+[0.590s] writing entry points to build/fair_drip/fair_drip.egg-info/entry_points.txt
+[0.590s] writing requirements to build/fair_drip/fair_drip.egg-info/requires.txt
+[0.591s] writing top-level names to build/fair_drip/fair_drip.egg-info/top_level.txt
+[0.613s] reading manifest file 'build/fair_drip/fair_drip.egg-info/SOURCES.txt'
+[0.615s] writing manifest file 'build/fair_drip/fair_drip.egg-info/SOURCES.txt'
+[0.615s] running build
+[0.615s] running build_py
+[0.616s] copying fair_drip/robot_test.py -> /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build/lib/fair_drip
+[0.617s] copying fair_drip/New_Listener_Robot.py -> /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build/lib/fair_drip
+[0.618s] copying fair_drip/Ros2_Listener_Robot.py -> /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build/lib/fair_drip
+[0.619s] running install
+[0.620s] running install_lib
+[0.621s] copying /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build/lib/fair_drip/robot_test.py -> /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip
+[0.622s] copying /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build/lib/fair_drip/New_Listener_Robot.py -> /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip
+[0.622s] copying /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build/lib/fair_drip/Ros2_Listener_Robot.py -> /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip
+[0.623s] byte-compiling /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/robot_test.py to robot_test.cpython-38.pyc
+[0.624s]   File "/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/robot_test.py", line 144
+[0.624s]     
+[0.624s]     ^
+[0.624s] SyntaxError: unexpected EOF while parsing
+[0.625s] 
+[0.625s] byte-compiling /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/New_Listener_Robot.py to New_Listener_Robot.cpython-38.pyc
+[0.630s] byte-compiling /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/Ros2_Listener_Robot.py to Ros2_Listener_Robot.cpython-38.pyc
+[0.634s] running install_data
+[0.634s] running install_egg_info
+[0.635s] removing '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip-0.0.1-py3.8.egg-info' (and everything under it)
+[0.637s] Copying build/fair_drip/fair_drip.egg-info to /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip-0.0.1-py3.8.egg-info
+[0.637s] running install_scripts
+[0.649s] Installing fair_lis script to /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/fair_drip
+[0.649s] Installing robot_test script to /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/fair_drip
+[0.650s] Installing talker script to /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/fair_drip
+[0.651s] writing list of installed files to '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/install.log'
+[0.671s] Invoked command in '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy' returned '0': PYTHONPATH=/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base build/fair_drip build --build-base /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/build install --record /root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip/install.log --install-scripts $base/lib/fair_drip --single-version-externally-managed install_data

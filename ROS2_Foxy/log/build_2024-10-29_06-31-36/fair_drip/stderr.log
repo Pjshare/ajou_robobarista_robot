@@ -1,0 +1,10 @@
+  File "/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/robot_test.py", line 144
+    
+    ^
+SyntaxError: unexpected EOF while parsing
+
+  File "/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/Ros2_Listener_Robot.py", line 168
+    nonlocal vision_ok
+    ^
+SyntaxError: no binding for nonlocal 'vision_ok' found
+

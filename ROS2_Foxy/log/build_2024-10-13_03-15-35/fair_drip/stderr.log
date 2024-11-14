@@ -1,0 +1,5 @@
+  File "/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/robot_test.py", line 80
+    초기 위치로 이동
+       ^
+SyntaxError: invalid syntax
+

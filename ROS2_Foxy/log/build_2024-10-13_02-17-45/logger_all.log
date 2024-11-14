@@ -1,0 +1,173 @@
+[0.105s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.105s] DEBUG:colcon:Parsed command line arguments: Namespace(allow_overriding=[], ament_cmake_args=None, base_paths=['.'], build_base='build', catkin_cmake_args=None, catkin_skip_building_tests=False, cmake_args=None, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, cmake_target=None, cmake_target_skip_unavailable=False, continue_on_error=False, event_handlers=None, executor='parallel', ignore_user_meta=False, install_base='install', log_base=None, log_level=None, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x7f35c8d45580>>, merge_install=False, metas=['./colcon.meta'], packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_end=None, packages_ignore=None, packages_ignore_regex=None, packages_select=None, packages_select_build_failed=False, packages_select_by_dep=None, packages_select_regex=None, packages_select_test_failures=False, packages_skip=None, packages_skip_build_finished=False, packages_skip_by_dep=None, packages_skip_regex=None, packages_skip_test_passed=False, packages_skip_up_to=None, packages_start=None, packages_up_to=None, packages_up_to_regex=None, parallel_workers=4, paths=None, symlink_install=False, test_result_base=None, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x7f35c8d45580>, verb_name='build', verb_parser=<colcon_defaults.argument_parser.defaults.DefaultArgumentsDecorator object at 0x7f35c8d45a90>)
+[0.115s] ERROR:colcon.colcon_core.extension_point:Exception loading extension 'colcon_core.package_identification.python_setup_py': module 'importlib._bootstrap' has no attribute 'SourceFileLoader'
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 169, in load_extension_points
+    extension_type = load_extension_point(name, value, group)
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 210, in load_extension_point
+    return EntryPoint(name, value, group).load()
+  File "/usr/lib/python3.8/importlib/metadata.py", line 77, in load
+    module = import_module(match.group('module'))
+  File "/usr/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 975, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 671, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 848, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_identification/python_setup_py.py", line 9, in <module>
+    import setuptools
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/__init__.py", line 12, in <module>
+    from setuptools.extension import Extension
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/extension.py", line 7, in <module>
+    from setuptools.dist import _get_unpatched
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/dist.py", line 16, in <module>
+    import pkg_resources
+  File "/usr/local/lib/python3.8/dist-packages/pkg_resources.py", line 1479, in <module>
+    register_loader_type(importlib_bootstrap.SourceFileLoader, DefaultProvider)
+AttributeError: module 'importlib._bootstrap' has no attribute 'SourceFileLoader'
+
+[0.116s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.116s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.116s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.116s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.117s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.117s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.117s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy'
+[0.118s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.118s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.118s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.118s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.118s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.129s] DEBUG:colcon.colcon_core.package_identification:Package '.' with type 'ros.ament_python' and name 'fair_drip'
+[0.130s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.130s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.130s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.130s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.131s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.142s] ERROR:colcon.colcon_core.extension_point:Exception loading extension 'colcon_core.package_augmentation.python_setup_py': module 'importlib._bootstrap' has no attribute 'SourceFileLoader'
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 169, in load_extension_points
+    extension_type = load_extension_point(name, value, group)
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 210, in load_extension_point
+    return EntryPoint(name, value, group).load()
+  File "/usr/lib/python3.8/importlib/metadata.py", line 77, in load
+    module = import_module(match.group('module'))
+  File "/usr/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 975, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 671, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 848, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_augmentation/python_setup_py.py", line 9, in <module>
+    from colcon_python_setup_py.package_identification.python_setup_py import \
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_identification/python_setup_py.py", line 9, in <module>
+    import setuptools
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/__init__.py", line 12, in <module>
+    from setuptools.extension import Extension
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/extension.py", line 7, in <module>
+    from setuptools.dist import _get_unpatched
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/dist.py", line 16, in <module>
+    import pkg_resources
+  File "/usr/local/lib/python3.8/dist-packages/pkg_resources.py", line 1479, in <module>
+    register_loader_type(importlib_bootstrap.SourceFileLoader, DefaultProvider)
+AttributeError: module 'importlib._bootstrap' has no attribute 'SourceFileLoader'
+
+[0.144s] ERROR:colcon.colcon_core.extension_point:Exception loading extension 'colcon_core.package_augmentation.ros_ament_python': module 'importlib._bootstrap' has no attribute 'SourceFileLoader'
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 169, in load_extension_points
+    extension_type = load_extension_point(name, value, group)
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 210, in load_extension_point
+    return EntryPoint(name, value, group).load()
+  File "/usr/lib/python3.8/importlib/metadata.py", line 77, in load
+    module = import_module(match.group('module'))
+  File "/usr/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 975, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 671, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 848, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/colcon_ros/package_augmentation/ros_ament_python.py", line 8, in <module>
+    from colcon_python_setup_py.package_identification.python_setup_py \
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_identification/python_setup_py.py", line 9, in <module>
+    import setuptools
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/__init__.py", line 12, in <module>
+    from setuptools.extension import Extension
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/extension.py", line 7, in <module>
+    from setuptools.dist import _get_unpatched
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/dist.py", line 16, in <module>
+    import pkg_resources
+  File "/usr/local/lib/python3.8/dist-packages/pkg_resources.py", line 1479, in <module>
+    register_loader_type(importlib_bootstrap.SourceFileLoader, DefaultProvider)
+AttributeError: module 'importlib._bootstrap' has no attribute 'SourceFileLoader'
+
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.146s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 0 installed packages in /root/colcon_ws/install
+[0.148s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 341 installed packages in /opt/ros/foxy
+[0.149s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.186s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'cmake_args' from command line to 'None'
+[0.186s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'cmake_target' from command line to 'None'
+[0.186s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.186s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'cmake_clean_cache' from command line to 'False'
+[0.187s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'cmake_clean_first' from command line to 'False'
+[0.187s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'cmake_force_configure' from command line to 'False'
+[0.187s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'ament_cmake_args' from command line to 'None'
+[0.187s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'catkin_cmake_args' from command line to 'None'
+[0.187s] Level 5:colcon.colcon_core.verb:set package 'fair_drip' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.188s] DEBUG:colcon.colcon_core.verb:Building package 'fair_drip' with the following arguments: {'ament_cmake_args': None, 'build_base': '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/build/fair_drip', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip', 'merge_install': False, 'path': '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy', 'symlink_install': False, 'test_result_base': None}
+[0.188s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.189s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.190s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy' with build type 'ament_python'
+[0.190s] Level 1:colcon.colcon_core.shell:create_environment_hook('fair_drip', 'ament_prefix_path')
+[0.191s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.191s] INFO:colcon.colcon_core.shell:Creating environment hook '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/share/fair_drip/hook/ament_prefix_path.ps1'
+[0.192s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/share/fair_drip/hook/ament_prefix_path.dsv'
+[0.193s] INFO:colcon.colcon_core.shell:Creating environment hook '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/share/fair_drip/hook/ament_prefix_path.sh'
+[0.194s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.194s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.200s] WARNING:colcon.colcon_ros.task.ament_python.build:Package 'fair_drip' doesn't explicitly install a marker in the package index (colcon-ros currently does it implicitly but that fallback will be removed in the future)
+[0.201s] WARNING:colcon.colcon_ros.task.ament_python.build:Package 'fair_drip' doesn't explicitly install the 'package.xml' file (colcon-ros currently does it implicitly but that fallback will be removed in the future)
+[0.202s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy'
+[0.202s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.202s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.267s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[0.267s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[0.267s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with 'Expected ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', 'setup.py', '--help-commands'] to pass: Traceback (most recent call last):
+  File "setup.py", line 1, in <module>
+    from setuptools import setup, find_packages
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/__init__.py", line 12, in <module>
+    from setuptools.extension import Extension
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/extension.py", line 7, in <module>
+    from setuptools.dist import _get_unpatched
+  File "/usr/local/lib/python3.8/dist-packages/setuptools/dist.py", line 16, in <module>
+    import pkg_resources
+  File "/usr/local/lib/python3.8/dist-packages/pkg_resources.py", line 1479, in <module>
+    register_loader_type(importlib_bootstrap.SourceFileLoader, DefaultProvider)
+AttributeError: module 'importlib._bootstrap' has no attribute 'SourceFileLoader'
+'
+[0.268s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[0.271s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[0.271s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[0.271s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[0.272s] DEBUG:colcon.colcon_notification.desktop_notification.notify2:Failed to initialize notify2: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+[0.272s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[0.273s] INFO:colcon.colcon_core.shell:Creating prefix script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/local_setup.ps1'
+[0.273s] INFO:colcon.colcon_core.shell:Creating prefix util module '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/_local_setup_util_ps1.py'
+[0.275s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/setup.ps1'
+[0.275s] INFO:colcon.colcon_core.shell:Creating prefix script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/local_setup.sh'
+[0.276s] INFO:colcon.colcon_core.shell:Creating prefix util module '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/_local_setup_util_sh.py'
+[0.277s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/setup.sh'
+[0.278s] INFO:colcon.colcon_core.shell:Creating prefix script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/local_setup.bash'
+[0.278s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/setup.bash'
+[0.279s] INFO:colcon.colcon_core.shell:Creating prefix script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/local_setup.zsh'
+[0.280s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/setup.zsh'

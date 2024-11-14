@@ -2,8 +2,9 @@
 import frrpc
 import conf_file as cf
 import time
-import control_v2
+from fair_drip import control_v2
 import asyncio
+
 ## Robot info
 ROBOT_IP = "192.168.58.2" 
 robot = frrpc.RPC(ROBOT_IP)
@@ -20,8 +21,8 @@ def actionHome():
     SPEED = float(100)
     DP1 = [0.000, 0.000, 0.000, 0.0, 0.000, 0.000]
     Pa1 = [2.0, 0.0, 0.0, 20.0, 20.0, 0.0]
-    pos0 = [1.327,-130.671,139.899,-101.789,87.985,89.265]
-    PTP(pos0, 30, -1)
+    pos0 = [1.327,-130.671,139.899,-101.789,87.985,-90.735] #89.265
+    PTP(pos0, 100, -1)
 
 def action00():
     robot_main = frrpc.RPC(ROBOT_IP)
@@ -31,8 +32,8 @@ def action00():
     SPEED = float(100)
     DP1 = [0.000, 0.000, 0.000, 0.0, 0.000, 0.000]
     Pa1 = [2.0, 0.0, 0.0, 20.0, 20.0, 0.0]
-    pos1 = [14.485, -93.489, 110.195, -103.067, 57.88, 89.264]
-    pos2 = [-14.485, -93.489, 110.195, -103.067, 113.866, 89.264]
+    pos1 = [14.485, -93.489, 110.195, -103.067, 57.88, -90.736] #89.264
+    pos2 = [-14.485, -93.489, 110.195, -103.067, 113.866, -90.736]#89.264
     PTP(pos1, 100, -1)
     PTP(pos2, 100, -1)
 
@@ -44,6 +45,7 @@ def newSPIRAL(J1, SPEED, Pa, DP):
         motion_state = robot.GetRobotMotionDone()
         if motion_state[1] == 1:
             break
+        # print("스파이럴 대기")
         time.sleep(0.1)
         
 def movegripper(index, pos, vel, force, max_time, last_arg=0):
@@ -53,7 +55,7 @@ def movegripper(index, pos, vel, force, max_time, last_arg=0):
         gripper_state = robot.GetGripperMotionDone()
         if gripper_state[2] == 1:  
             break
-        print("Gripper moving ready...")
+        print("Gripper 동작 대기 중...")
         time.sleep(0.1)
 
 def PTP(J=None, SPEED=70.0, BLEND=-1, P=None):
@@ -77,25 +79,88 @@ def transform_joint(pose):
     return joint_pose
 
 if __name__ == "__main__":
+
+    # actionHome()
+    # action00()
+    # asyncio.run(control_v2.beancup_pick1())
+    # # asyncio.run(control_v2.beancup_pick2())
+    # # asyncio.run(control_v2.beancup_pick3())
+    # asyncio.run(control_v2.beancup_dropbean_ready())
+    # asyncio.run(control_v2.beancup_dropbean_1())
+    # # asyncio.run(control_v2.beancup_dropbean_2())
+    # # asyncio.run(control_v2.beancup_dropbean_3())
+    # asyncio.run(control_v2.beancup_back1())
+    # # asyncio.run(control_v2.beancup_back2())
+    # # asyncio.run(control_v2.beancup_back3())
+    # asyncio.run(control_v2.new_preparing_pick_dripper())
+    asyncio.run(control_v2.shaking_dripper1())
+    # asyncio.run(control_v2.new_preparing_pick_dripper())
+    # # asyncio.run(control_v2.shaking_dripper2())
+    # # asyncio.run(control_v2.new_preparing_pick_dripper())
+    # # asyncio.run(control_v2.shaking_dripper3())
+    # # asyncio.run(control_v2.new_preparing_pick_dripper())
+
+    # asyncio.run(control_v2.kettle_pick())
+    # asyncio.run(control_v2.pouring_water())
+    # asyncio.run(control_v2.pouring_water_home())
     
-    #actionHome()
-    #action00()
-    #asyncio.run(control_v2.beancup_pick())
-    #asyncio.run(control_v2.beancup_dropbean_ready()) 
-    #asyncio.run(control_v2.beancup_dropbean_1())
-    #asyncio.run(control_v2.beancup_dropbean_ready()) 
-    #asyncio.run(control_v2.beancup_dropbean_2())
-    #asyncio.run(control_v2.beancup_dropbean_ready()) 
-    #asyncio.run(control_v2.beancup_dropbean_3())
-    #asyncio.run(control_v2.beancup_dropbean_ready()) 
-    #asyncio.run(control_v2.beancup_back())
-    #asyncio.run(control_v2.new_preparing_pick_dripper()) 
-    #asyncio.run(control_v2.shaking_dripper1()) 
-    #asyncio.run(control_v2.new_preparing_pick_dripper()) 
-    movegripper(1,22,50,50,10000,0)
-    #asyncio.run(control_v2.kettle_pick()) 
-    
-    #actionHome()
+    # robot.SetSpeed(100)
+
+
+    # # 첫번째 드리퍼에 spiral 
+    # # for i in range(1, 6):
+    # #     pa0 = [0.0, 1.8, 1.6, 2.0, 1.6, 2.0]
+    # #     spd = [0, 80, 90, 80, 90, 80]
+    # #     ext = [0, 45, 25, 25, 18, 1]
+    # #     ang = list(cf.pouring_water_dripper1.values())[i][5]
+    # #     ang_sub1 = list(cf.pouring_water_dripper1.values())[i][4]
+    # #     ang_sub2 = list(cf.pouring_water_dripper1.values())[i][3]
+    # #     ang_sub3 = list(cf.pouring_water_dripper1.values())[i][2]
+    # #     ang_sub4 = list(cf.pouring_water_dripper1.values())[i][1]
+    # #     ang_sub5 = list(cf.pouring_water_dripper1.values())[i][0]
+
+    # #     asyncio.run(control_v2.standard_spiral1(spd[i], ang, ang_sub1, ang_sub2, ang_sub3, ang_sub4, ang_sub5, pa0[i], ext[i]))
+    # #     if i==5:
+    # #         print("over")
+
+    # # 두번째 드리퍼에 spiral 
+    # for i in range(0, 5):
+    #         pa0 = [1.8, 1.8, 1.8, 1.8, 1.8]
+    #         spd = [65, 90, 65, 90, 75]
+    #         ext = [15, 15, 15, 15, 15]
+
+    #         if i % 2 == 1 :
+    #             ang = 5
+    #             ang_sub1 = 1.58
+    #             ang_sub2 = -0.568
+    #             ang_sub3 = -0.773
+    #             ang_sub4 = 1.428
+    #             ang_sub5 = 1.555
+    #         else :
+    #             ang = 0
+    #             ang_sub1 = 0
+    #             ang_sub2 = 0
+    #             ang_sub3 = 0
+    #             ang_sub4 = 0
+    #             ang_sub5 = 0
+
+    #         asyncio.run(control_v2.standard_spiral2(spd[i], ang, ang_sub1, ang_sub2, ang_sub3, ang_sub4, ang_sub5, pa0[i], ext[i]))
+    #         if i==5:
+    #             print("over")
+
+    # asyncio.run(control_v2.kettle_back())
+
+
+
+
+
+
+
+
+
+
+
+
     # for i in range(10):
     #     actionHome()
     #     for i in range(4):

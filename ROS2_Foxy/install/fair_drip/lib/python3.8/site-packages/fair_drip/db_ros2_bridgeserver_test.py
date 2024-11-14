@@ -4,7 +4,7 @@ import threading
 import time  # For controlling the interval between messages
 
 # 웹소켓 서버의 주소
-URL = "ws://192.168.58.8:9090"
+URL = "ws://192.168.58.16:9090"
 
 def send_message(ws):
     while True:

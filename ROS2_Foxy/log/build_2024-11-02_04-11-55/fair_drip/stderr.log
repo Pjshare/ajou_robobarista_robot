@@ -1,0 +1,6 @@
+  File "/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/control_v2.py", line 169
+    else if cup_point == 2:
+         ^
+SyntaxError: invalid syntax
+
+Sorry: IndentationError: unexpected indent (Ros2_Listener_Robot.py, line 395)

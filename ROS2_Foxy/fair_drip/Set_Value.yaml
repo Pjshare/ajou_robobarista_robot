@@ -3,9 +3,9 @@ Machine_Info:
   Cup_COM: '/dev/ttyUSB1'
   Temp_COM: '/dev/ttyUSB0'
 DB:
-  DB_ID: 'bst_drip'
-  DB_PW: '240426'
-  DB_IP: '210.107.206.200'
-  PORT: '2404'
+  DB_ID: 'order_service'
+  DB_PW: 'order_service'
+  DB_IP: '127.0.0.1'
+  PORT: '3306'
   DATABASE: 'bst_drip_db' 
   ORDERTABLE: 'bst_drip_order'

@@ -1,0 +1,6 @@
+  File "/root/ros2_ws/src/Ajou_Drip_Project/ROS2_Foxy/install/fair_drip/lib/python3.8/site-packages/fair_drip/robot_test.py", line 134
+    ang = list(cf.)
+                  ^
+SyntaxError: invalid syntax
+
+Sorry: IndentationError: expected an indented block (Ros2_Listener_Robot.py, line 244)

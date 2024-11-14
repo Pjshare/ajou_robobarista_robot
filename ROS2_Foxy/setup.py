@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'fair_lis = fair_drip.Ros2_Listener_Robot:main',
             'talker = fair_drip.ros2_bridgesever_test:main',
+            'robot_test = fair_drip.robot_test:main', 
         ],
     },
     package_data={
